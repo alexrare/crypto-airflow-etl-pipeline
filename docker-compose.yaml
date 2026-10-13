@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:13
+    container_name: airflow-postgres
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+    ports:
+      - "5432:5432"
+
+  webserver:
+    image: apache/airflow:2.7.2
+    container_name: airflow-webserver
+    hostname: airflow-webserver
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+    environment:
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__API__SECRET_KEY=alex_secret_key_alfa_bank_project_2026
+      # 🌟 МАГИЯ: Автоматическая установка библиотек в веб-сервер при старте
+      - _PIP_ADDITIONAL_REQUIREMENTS=pandas yfinance sqlalchemy<2.0 multitasking==0.0.9 typing_extensions
+    command: webserver
+
+  scheduler:
+    image: apache/airflow:2.7.2
+    container_name: airflow-scheduler
+    hostname: airflow-scheduler
+    depends_on:
+      - postgres
+    volumes:
+      - ./dags:/opt/airflow/dags
+    environment:
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__API__SECRET_KEY=alex_secret_key_alfa_bank_project_2026
+      # 🌟 МАГИЯ: Автоматическая установка библиотек в планировщик при старте
+      - _PIP_ADDITIONAL_REQUIREMENTS=pandas yfinance sqlalchemy<2.0 multitasking==0.0.9 typing_extensions
+    command: scheduler
